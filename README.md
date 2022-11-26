@@ -1,11 +1,9 @@
 # n64-rom-info
 batch scrip to get information from n64 roms
 * supports .zip, or unzipped n64 roms
-* needs 7z zip installed 32bit/64bit to descompress .zip, and get crc info: https://www.7-zip.org/
-* needs xxd.exe in _bin folder to extract hex info: https://sourceforge.net/projects/xxd-for-windows/
-* will look for 7z.exe and xxd.exe, program files, next to script, _bin folder or in system32 folder
-
-
+* needs 7zip 32bit/64bit to descompress .zip, and get crc info: https://www.7-zip.org/
+* needs xxd.exe to extract hex info: https://sourceforge.net/projects/xxd-for-windows/
+* will look for 7z.exe and xxd.exe in: program files, sytem32, next to script or in _bin folder
 # usage
 
 * run script inside a folder to scan .zip, and all n64 roms, or drag and drop a single file/folder or group of files to the script
