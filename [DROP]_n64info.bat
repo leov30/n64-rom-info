@@ -26,6 +26,8 @@ if not "%~1"=="" (
 :skip_addmore
 call :error_check
 
+
+
 for /f "usebackq delims=" %%g in ("%temp%\temp.txt") do (
 	call :get_n64 "%%g" "%%~xg"
 )
@@ -137,7 +139,17 @@ if "%_code%"=="4C" set "_region=Gateway 64 (PAL)"&goto skip_region
 set "_region=Unknown"
 :skip_region
 
+
 echo ----------------------------------------------------
+(echo ----------------------------------------------------)>>"%_home%output.txt"
+rem //look for alt titles by crc in .dat files
+for %%g in ("%_home%*.dat") do (
+	for /f tokens^=2^ delims^=^" %%h in ('findstr /il /c:"crc=\"%_crc%\"" "%%g"') do (
+		echo. %%~nh
+		(echo %%~nh)>>"%_home%output.txt"
+	)
+) 
+echo.
 echo. Zip File       : "%_file%"
 echo. File Name      : "%_rom%"
 echo. ROM Tilte      : "%_title%"
@@ -150,7 +162,7 @@ echo. Project64 id   : %_surreal%
 echo. RiceVideo id   : %_rice%
 echo.
 
-(echo ----------------------------------------------------
+(echo.
 echo Zip File       : "%_file%"
 echo File Name      : "%_rom%"
 echo ROM Tilte      : "%_title%"
@@ -162,6 +174,10 @@ echo Size           : %_Size%
 echo Project64 id   : %_surreal%
 echo RiceVideo id   : %_rice%
 echo.) >>"%_home%output.txt"
+
+REM if exist "%temp%\dat.tmp" (
+	REM type "%temp%\dat.tmp" >>"%home%output.txt"
+REM )
 
 rem // only add entry if crc dosent exist
 >nul findstr /l /c:"%_crc%" "%_home%\output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%)>>"%_home%\output.csv"
