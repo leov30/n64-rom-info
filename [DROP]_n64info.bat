@@ -12,7 +12,7 @@ rem // https://sourceforge.net/projects/xxd-for-windows/
 set "_home=%~dp0"
 if exist "%temp%\temp.txt" del "%temp%\temp.txt"
 if exist "%_home%\output.txt" del "%_home%\output.txt"
-if not exist "%_home%\output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version",CRC,Size,Project64_id,Daedalus_id)>"%_home%\output.csv"
+
 
 rem //check if its a folder
 if "%~a1"=="d----------" cd /d "%~1"&goto skip_addmore
@@ -26,7 +26,13 @@ if not "%~1"=="" (
 :skip_addmore
 call :error_check
 
+rem //look for a datafile, includes full path
+set "_dat="
+for %%g in ("%_home%*.dat") do (
+	set "_dat=%%~ng"
+)
 
+if not exist "%_home%\output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version",CRC,Size,Project64_id,Daedalus_id,"%_dat%")>"%_home%\output.csv"
 
 for /f "usebackq delims=" %%g in ("%temp%\temp.txt") do (
 	call :get_n64 "%%g" "%%~xg"
@@ -140,16 +146,14 @@ set "_region=Unknown"
 :skip_region
 
 
+rem //get title from datafile
+set "_dat_title="
+if not "%_dat%"=="" (
+	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat%.dat"') do set "_dat_title=%%~ng"
+)
+
 echo ----------------------------------------------------
-(echo ----------------------------------------------------)>>"%_home%output.txt"
-rem //look for alt titles by crc in .dat files
-for %%g in ("%_home%*.dat") do (
-	for /f tokens^=2^ delims^=^" %%h in ('findstr /il /c:"crc=\"%_crc%\"" "%%g"') do (
-		echo. %%~nh
-		(echo %%~nh)>>"%_home%output.txt"
-	)
-) 
-echo.
+echo. Datafile       : "%_dat_title%"
 echo. Zip File       : "%_file%"
 echo. File Name      : "%_rom%"
 echo. ROM Tilte      : "%_title%"
@@ -162,7 +166,8 @@ echo. Project64 id   : %_surreal%
 echo. RiceVideo id   : %_rice%
 echo.
 
-(echo.
+(echo ----------------------------------------------------
+echo Datafile       : "%_dat_title%"
 echo Zip File       : "%_file%"
 echo File Name      : "%_rom%"
 echo ROM Tilte      : "%_title%"
@@ -175,12 +180,8 @@ echo Project64 id   : %_surreal%
 echo RiceVideo id   : %_rice%
 echo.) >>"%_home%output.txt"
 
-REM if exist "%temp%\dat.tmp" (
-	REM type "%temp%\dat.tmp" >>"%home%output.txt"
-REM )
-
 rem // only add entry if crc dosent exist
->nul findstr /l /c:"%_crc%" "%_home%\output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%)>>"%_home%\output.csv"
+>nul findstr /l /c:"%_crc%" "%_home%\output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%,"%_dat_title%")>>"%_home%\output.csv"
 
 set /a "_count_lines+=1"
 set /a "_percent=(%_count_lines%*100)/%_total_lines%
