@@ -7,8 +7,8 @@ batch scrip to get information from n64 roms
 # usage
 
 * run script inside a folder to scan .zip, and all n64 roms, or drag and drop a single file/folder or group of files to the script
-* will make or update config files if surreal64 folder its found
-* the script will update "output.csv" if already exist
+* will make or update config files if surreal64 folder its found (will not add duplicated entries)
+* the script will update "output.csv" if already exist (will not add duplicated entries)
 * will output alternaive titles from all .dat files found next to the script by crc matching.
 
 
