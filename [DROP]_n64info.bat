@@ -1,25 +1,25 @@
 @echo off
-rem // build Nov-26-22
-rem // supports .zip, or unzipped n64 roms
-rem // run script inside a folder to scan .zip, and all n64 roms
-rem // or drag and drop a single file/folder or group of files to the script
-rem // will make or update config files if surreal64 folder its found
-rem // the script will update "output.csv" if already exist
-rem // this script needs 7z.exe and xxd.exe:
-rem // https://www.7-zip.org/
-rem // https://sourceforge.net/projects/xxd-for-windows/
+rem //option for alt titles in configuration files
+rem //0=use rom name,1=use datafile title,2=use zip file name
+set /a _option=2
 
 set "_home=%~dp0"
-if exist "%temp%\temp.txt" del "%temp%\temp.txt"
-if exist "%_home%\output.txt" del "%_home%\output.txt"
+rem //if saves folder its found
+set /a _opt_saves=0
+if exist "%_home%saves" set /a _opt_saves=1
+rem //if surreal64 folder its found
+set /a _opt_surreal=0
+if exist "%_home%surreal64" set /a _opt_surreal=1
 
+if exist "%temp%\temp.txt" del "%temp%\temp.txt"
+if exist "%_home%output.txt" del "%_home%output.txt"
 
 rem //check if its a folder
 if "%~a1"=="d----------" cd /d "%~1"&goto skip_addmore
 
 :add_more
 if not "%~1"=="" (
-	for /f "delims=" %%g in ("%~1") do (echo %%~nxg)>>"%temp%\temp.txt"
+	for %%g in ("%~1") do (echo %%~nxg)>>"%temp%\temp.txt"
 	shift&goto add_more
 )
 
@@ -32,7 +32,7 @@ for %%g in ("%_home%*.dat") do (
 	set "_dat=%%~ng"
 )
 
-if not exist "%_home%\output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version",CRC,Size,Project64_id,Daedalus_id,"%_dat%")>"%_home%\output.csv"
+if not exist "%_home%output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version",CRC,Size,Project64_id,Daedalus_id,"%_dat%")>"%_home%output.csv"
 
 for /f "usebackq delims=" %%g in ("%temp%\temp.txt") do (
 	call :get_n64 "%%g" "%%~xg"
@@ -68,7 +68,7 @@ if not "%~2"==".zip" (
 	set "_size=%~z1"
 	
 	set "_rom=%~1"
-	set "_file=None"
+	set "_file="
 )
 
 for /f "tokens=9,*" %%g in ('^(%_xxd% -u -s 0x20 -l 16 "%_rom%"^)') do set "_title=%%h"
@@ -145,15 +145,14 @@ if "%_code%"=="4C" set "_region=Gateway 64 (PAL)"&goto skip_region
 set "_region=Unknown"
 :skip_region
 
-
 rem //get title from datafile
-set "_dat_title="
+set "_datrom="
 if not "%_dat%"=="" (
-	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat%.dat"') do set "_dat_title=%%~ng"
+	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat%.dat"') do set "_datrom=%%g"
 )
 
 echo ----------------------------------------------------
-echo. Datafile       : "%_dat_title%"
+echo. Datafile       : "%_datrom%"
 echo. Zip File       : "%_file%"
 echo. File Name      : "%_rom%"
 echo. ROM Tilte      : "%_title%"
@@ -167,7 +166,7 @@ echo. RiceVideo id   : %_rice%
 echo.
 
 (echo ----------------------------------------------------
-echo Datafile       : "%_dat_title%"
+echo Datafile       : "%_datrom%"
 echo Zip File       : "%_file%"
 echo File Name      : "%_rom%"
 echo ROM Tilte      : "%_title%"
@@ -181,37 +180,35 @@ echo RiceVideo id   : %_rice%
 echo.) >>"%_home%output.txt"
 
 rem // only add entry if crc dosent exist
->nul findstr /l /c:"%_crc%" "%_home%\output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%,"%_dat_title%")>>"%_home%\output.csv"
+>nul findstr /l /c:"%_crc%" "%_home%output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%,"%_datrom%")>>"%_home%output.csv"
 
 set /a "_count_lines+=1"
 set /a "_percent=(%_count_lines%*100)/%_total_lines%
 title N64 info: %_count_lines% / %_total_lines% ^( %_percent% %% ^)
 
 rem //clear variables?
-if not exist "%_home%\surreal64" (
+if %_opt_surreal% equ 0 (
 	set "_crc="
 	set "_crc1="
 	set "_crc2="
 	set "_code="
 	exit /b
 )
-rem // --------------  update surreal64 configuration files -------------------
+
+rem // -----------------------------  update surreal64 configuration files ----------------------------------------
 rem // if file dosent exist will make a new one, if surreal64 folder exist
 
->nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%\surreal64\surreal.ini"||(
-	echo New game added to Surreal.ini!!&echo.
-	(echo New game added to Surreal.ini!!&echo.)>>"%_home%output.txt"
-	
-	(echo.&echo [%_surreal%]
-	for /f "delims=" %%g in ("%_title%") do echo Game Name=%%g
-	for /f "delims=" %%g in ("%_rom%") do echo Alternate Title=%%~ng
-	echo Comments=)>>"%_home%\surreal64\surreal.ini"
+if %_option% equ 1 (
+	if not "%_datrom%"=="" set "_rom=%_datrom%"
+)
+if %_option% equ 2 (
+	if not "%_file%"=="" set "_rom=%_file%"
 )
 
->nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%\surreal64\Project64.rdb"||(
+>nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%surreal64\Project64.rdb"||(
 echo.&echo [%_surreal%]
-for /f "delims=" %%g in ("%_title%") do echo Internal Name=%%g
-for /f "delims=" %%g in ("%_rom%") do echo Good Name=%%~ng
+for %%g in ("%_title%") do echo Internal Name=%%~g
+for %%g in ("%_rom%") do echo Good Name=%%~ng
 echo RDRAM Size=4
 echo Counter Factor=2
 echo Save Type=First Save Type
@@ -221,13 +218,13 @@ echo Use TLB=Yes
 echo Linking=On
 echo Reg Cache=Yes
 echo Delay SI=No
-echo SP Hack=No)>>"%_home%\surreal64\Project64.rdb"
+echo SP Hack=No)>>"%_home%surreal64\Project64.rdb"
 
 for %%g in (1964_11.ini 1964.ini) do (
-	>nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%\surreal64\%%g"||(
+	>nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%surreal64\%%g"||(
 	echo.&echo [%_surreal%]
-	for /f "delims=" %%h in ("%_title%") do echo Game Name=%%h
-	for /f "delims=" %%h in ("%_rom%") do echo Alternate Title=%%~nh
+	for %%h in ("%_title%") do echo Game Name=%%~h
+	for %%h in ("%_rom%") do echo Alternate Title=%%~nh
 	echo RDRAM Size=1
 	echo Save Type=5
 	echo EEPROM Size=2
@@ -240,14 +237,56 @@ for %%g in (1964_11.ini 1964.ini) do (
 	echo DMA=2
 	echo Link 4KB Blocks=1
 	echo Advanced Block Analysis=1
-	echo Assume 32bit=2)>>"%_home%\surreal64\%%g"
+	echo Assume 32bit=2)>>"%_home%surreal64\%%g"
 )
 
 for %%g in (RiceVideo6.1.2.ini RiceVideo6.1.0.ini RiceVideo5.6.0.ini RiceDaedalus5.3.1.ini RiceDaedalus5.1.0.ini) do (
-	>nul 2>&1 findstr /bli /c:"{%_rice%}" "%_home%\surreal64\%%g"||(
-		for /f "delims=" %%h in ("%_rom%") do echo.&echo //%%~nh&echo {%_rice%}
-		for /f "delims=" %%h in ("%_title%") do echo Name=%%h
-	)>>"%_home%\surreal64\%%g"
+	>nul 2>&1 findstr /bli /c:"{%_rice%}" "%_home%surreal64\%%g"||(
+		for %%h in ("%_rom%") do echo.&echo //%%~nh&echo {%_rice%}
+		for %%h in ("%_title%") do echo Name=%%~h
+	)>>"%_home%surreal64\%%g"
+)
+
+rem //search for configuration ini in save folder
+set /a _config=0
+if %_opt_saves% equ 0 goto skip_saves
+if /i exist "%_home%saves\%_crc1%\%_crc1%.ini" (
+	set /a _config=1
+	for /f "tokens=1,2 delims==" %%h in ('findstr /lb "preferedemu videoplugin iAudioPlugin iRspPlugin dwMaxVideoMem dw1964DynaMem dw1964PagingMem dwPJ64DynaMem dwPJ64PagingMem" "%_home%saves\%_crc1%\%_crc1%.ini"') do (
+		if "%%h"=="preferedemu" set "_emu=%%i"
+		if "%%h"=="videoplugin" set "_video=%%i"
+		if "%%h"=="iAudioPlugin" set "_audio=%%i"
+		if "%%h"=="iRspPlugin" set "_rsp=%%i"
+		if "%%h"=="dwMaxVideoMem" set "_vmem=%%i"
+		if "%%h"=="dw1964DynaMem" set "_1964mem=%%i"
+		if "%%h"=="dw1964PagingMem" set "_1964pg=%%i"
+		if "%%h"=="dwPJ64DynaMem" set "_pj64mem=%%i"
+		if "%%h"=="dwPJ64PagingMem" set "_pj64pg=%%i"
+	)	
+)
+
+:skip_saves
+
+>nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%surreal64\surreal.ini"||(
+	echo New game added to Surreal.ini!!&echo.
+	(echo New game added to Surreal.ini!!&echo.)>>"%_home%output.txt"
+	
+	(echo.&echo [%_surreal%]
+	for %%g in ("%_title%") do echo Game Name=%%~g
+	for %%g in ("%_rom%") do echo Alternate Title=%%~ng
+	echo Comments=)>>"%_home%surreal64\surreal.ini"
+	
+	if %_config% equ 1 (
+		(echo Emulator=%_emu%
+		echo Video Plugin=%_video%
+		echo Audio Plugin=%_audio%
+		echo Rsp Plugin=%_rsp%
+		echo Max Video Mem=%_vmem%
+		echo 1964 Dyna Mem=%_1964mem%
+		echo 1964 Paging Mem=%_1964pg%
+		echo PJ64 Dyna Mem=%_pj64mem%
+		echo PJ64 Paging Mem=%_pj64pg%)>>"%_home%surreal64\surreal.ini"
+	)
 )
 
 rem //clear variables
@@ -259,7 +298,6 @@ exit /b
 
 rem // ---------------------------- check for errors before staring script --------------------------
 :error_check
-rem //will need full path for when drag and drop
 if exist "%_home%7z.exe" set _7zip="%_home%7z.exe"&goto error_check_1
 if exist "%_home%_bin\7z.exe" set _7zip="%_home%_bin\7z.exe"&goto error_check_1
 if exist "c:\windows\system32\7z.exe" set "_7zip=7z.exe"&goto error_check_1
