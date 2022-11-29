@@ -4,15 +4,49 @@ rem //0=use rom name,1=use datafile title,2=use zip file name
 set /a _option=2
 
 set "_home=%~dp0"
-rem //if saves folder its found
-set /a _opt_saves=0
-if exist "%_home%saves" set /a _opt_saves=1
-rem //if surreal64 folder its found
+
+rem //emulator defaults
+set "_emu=0"
+set "_video=2"
+set "_audio=3"
+set "_vmem=5"
+set "_rsp=2"
+set "_1964mem=8"
+set "_1964pg=4"
+set "_pj64mem=16"
+set "_pj64pg=4"
+
 set /a _opt_surreal=0
-if exist "%_home%surreal64" set /a _opt_surreal=1
+set /a _opt_saves=0
+
+if exist "%_home%saves" (
+	set /a _opt_saves=1
+	if "%~1"=="" (
+		if exist "%_home%surreal.ini" goto add_saves
+	)
+)
+:add_saves_back
 
 if exist "%temp%\temp.txt" del "%temp%\temp.txt"
 if exist "%_home%output.txt" del "%_home%output.txt"
+
+rem //look for defaults in surreal.ini
+if exist "%_home%surreal64" (
+	set /a _opt_surreal=1
+	>nul 2>&1 findstr /lb "[Settings]" "%_home%surreal64\surreal.ini"&&(
+		for /f "tokens=1,2 delims==" %%g in ('findstr /lb "Default" "%_home%surreal64\surreal.ini"') do (
+			if "%%g"=="Default Emulator" set "_emu=%%h"
+			if "%%g"=="Default Video Plugin" set "_video=%%h"
+			if "%%g"=="Default Audio Plugin" set "_audio=%%h"
+			if "%%g"=="Default Rsp Plugin" set "_rsp=%%h"
+			if "%%g"=="Default Max Video Mem" set "_vmem=%%h"
+			if "%%g"=="Default 1964 Dyna Mem" set "_1964mem=%%h"
+			if "%%g"=="Default 1964 Paging Mem" set "_1964pg=%%h"
+			if "%%g"=="Default PJ64 Dyna Mem" set "_pj64mem=%%h"
+			if "%%g"=="Default PJ64 Paging Mem" set "_pj64pg=%%h"
+		)
+	)
+)
 
 rem //check if its a folder
 if "%~a1"=="d----------" cd /d "%~1"&goto skip_addmore
@@ -247,26 +281,7 @@ for %%g in (RiceVideo6.1.2.ini RiceVideo6.1.0.ini RiceVideo5.6.0.ini RiceDaedalu
 	)>>"%_home%surreal64\%%g"
 )
 
-rem //search for configuration ini in save folder
-set /a _config=0
-if %_opt_saves% equ 0 goto skip_saves
-if /i exist "%_home%saves\%_crc1%\%_crc1%.ini" (
-	set /a _config=1
-	for /f "tokens=1,2 delims==" %%h in ('findstr /lb "preferedemu videoplugin iAudioPlugin iRspPlugin dwMaxVideoMem dw1964DynaMem dw1964PagingMem dwPJ64DynaMem dwPJ64PagingMem" "%_home%saves\%_crc1%\%_crc1%.ini"') do (
-		if "%%h"=="preferedemu" set "_emu=%%i"
-		if "%%h"=="videoplugin" set "_video=%%i"
-		if "%%h"=="iAudioPlugin" set "_audio=%%i"
-		if "%%h"=="iRspPlugin" set "_rsp=%%i"
-		if "%%h"=="dwMaxVideoMem" set "_vmem=%%i"
-		if "%%h"=="dw1964DynaMem" set "_1964mem=%%i"
-		if "%%h"=="dw1964PagingMem" set "_1964pg=%%i"
-		if "%%h"=="dwPJ64DynaMem" set "_pj64mem=%%i"
-		if "%%h"=="dwPJ64PagingMem" set "_pj64pg=%%i"
-	)	
-)
-
-:skip_saves
-
+rem //add entry to surreal.ini if game was not found
 >nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%surreal64\surreal.ini"||(
 	echo New game added to Surreal.ini!!&echo.
 	(echo New game added to Surreal.ini!!&echo.)>>"%_home%output.txt"
@@ -276,16 +291,20 @@ if /i exist "%_home%saves\%_crc1%\%_crc1%.ini" (
 	for %%g in ("%_rom%") do echo Alternate Title=%%~ng
 	echo Comments=)>>"%_home%surreal64\surreal.ini"
 	
-	if %_config% equ 1 (
-		(echo Emulator=%_emu%
-		echo Video Plugin=%_video%
-		echo Audio Plugin=%_audio%
-		echo Rsp Plugin=%_rsp%
-		echo Max Video Mem=%_vmem%
-		echo 1964 Dyna Mem=%_1964mem%
-		echo 1964 Paging Mem=%_1964pg%
-		echo PJ64 Dyna Mem=%_pj64mem%
-		echo PJ64 Paging Mem=%_pj64pg%)>>"%_home%surreal64\surreal.ini"
+	if %_opt_saves% equ 1 (
+		if /i exist "%_home%saves\%_crc1%\%_crc1%.ini" (
+			for /f "tokens=1,2 delims==" %%h in ('findstr /lb "preferedemu videoplugin iAudioPlugin iRspPlugin dwMaxVideoMem dw1964DynaMem dw1964PagingMem dwPJ64DynaMem dwPJ64PagingMem" "%_home%saves\%_crc1%\%_crc1%.ini"') do (
+				if "%%h"=="preferedemu" if not "%_emu%"=="%%i"  echo Emulator=%%i
+				if "%%h"=="videoplugin" if not "%_video%"=="%%i" echo Video Plugin=%%i
+				if "%%h"=="iAudioPlugin" if not "%_audio%"=="%%i" echo Audio Plugin=%%i
+				if "%%h"=="iRspPlugin" if not "%_rsp%"=="%%i" echo Rsp Plugin=%%i
+				if "%%h"=="dwMaxVideoMem" if not "%_vmem%"=="%%i" echo Max Video Mem=%%i
+				if "%%h"=="dw1964DynaMem" if not "%_1964mem%"=="%%i" echo 1964 Dyna Mem=%%i
+				if "%%h"=="dw1964PagingMem" if not "%_1964pg%"=="%%i" echo 1964 Paging Mem=%%i
+				if "%%h"=="dwPJ64DynaMem" if not "%_pj64mem%"=="%%i" echo PJ64 Dyna Mem=%%i
+				if "%%h"=="dwPJ64PagingMem" if not "%_pj64pg%"=="%%i" echo PJ64 Paging Mem=%%i
+			)>>"%_home%surreal64\surreal.ini"
+		)
 	)
 )
 
@@ -338,5 +357,96 @@ if %_total_lines% equ 0 (
 	title ERROR
 	echo THERE ARE NO FILES&pause&exit
 )	
+
+exit /b
+
+rem // ------------------------------- add config script --------------------------------------------------
+
+:add_saves
+echo. "Saves" folder and "surreal.ini" were found!!
+echo.
+choice /m "add config from saves folder to surreal.ini?"
+if %errorlevel% equ 2 goto add_saves_back
+cls
+echo exclamation marks will dissapear from titles
+echo escape like this ^^! in surreal.ini
+echo.
+timeout 5
+
+setlocal enabledelayedexpansion
+if not exist "saves\" title ERROR&echo SAVES FOLDER WAS NOT FOUND&pause&exit
+if not exist "surreal.ini" title ERROR&echo surreal.ini WAS NOT FOUND&pause&exit
+
+if exist "notfound.log" del notfound.log
+if exist "surreal.ini.new" del surreal.ini.new
+
+>nul 2>&1 findstr /lb "[Settings]" "surreal.ini"&&(
+	(echo [Settings]
+	findstr /lb "Rom Media Skin Save Screenshot Default" "surreal.ini"
+	echo.)>>surreal.ini.new
+	
+	rem //look for defaults in surreal.ini
+	for /f "tokens=1,2 delims==" %%g in ('findstr /lb "Default" "surreal.ini"') do (
+		if "%%g"=="Default Emulator" set "_emu=%%h"
+		if "%%g"=="Default Video Plugin" set "_video=%%h"
+		if "%%g"=="Default Audio Plugin" set "_audio=%%h"
+		if "%%g"=="Default Rsp Plugin" set "_rsp=%%h"
+		if "%%g"=="Default Max Video Mem" set "_vmem=%%h"
+		if "%%g"=="Default 1964 Dyna Mem" set "_1964mem=%%h"
+		if "%%g"=="Default 1964 Paging Mem" set "_1964pg=%%h"
+		if "%%g"=="Default PJ64 Dyna Mem" set "_pj64mem=%%h"
+		if "%%g"=="Default PJ64 Paging Mem" set "_pj64pg=%%h"
+	)
+)
+
+for /r "saves" %%g in (*.ini) do (
+	call :search_crc1 "%%g"
+	
+)
+title FINISHED
+pause&exit
+
+:search_crc1
+set /a _found=0
+set /a _line=0
+set "_crc1=%~n1"
+for /f "delims=" %%g in (surreal.ini) do (
+	for /f "delims=[-" %%h in ("%%g") do (
+		if /i "%%h"=="%_crc1%" (
+			(echo %%g)>>surreal.ini.new
+			set /a _found=1
+		)
+	)
+	if !_found! equ 1 (
+		for /f "tokens=1,2 delims==" %%h in ("%%g") do (
+			if "%%h"=="Game Name" echo %%g
+			if "%%h"=="Alternate Title" echo %%g
+			if "%%h"=="Comments" echo %%g
+		)>>surreal.ini.new
+		set /a _line+=1
+	)
+	if !_line! equ 4 goto exit_loop
+)
+
+rem //log notfound games, since we dont have the full id
+echo %_crc1% Not FOUND
+(echo %_crc1%)>>notfound.log
+
+exit /b
+
+:exit_loop
+echo %_crc1%
+(for /f "tokens=1,2 delims==" %%h in ('findstr /lb "preferedemu videoplugin iAudioPlugin iRspPlugin dwMaxVideoMem dw1964DynaMem dw1964PagingMem dwPJ64DynaMem dwPJ64PagingMem" "%~1"') do (
+	if "%%h"=="preferedemu" if not "%_emu%"=="%%i"  echo Emulator=%%i
+	if "%%h"=="videoplugin" if not "%_video%"=="%%i" echo Video Plugin=%%i
+	if "%%h"=="iAudioPlugin" if not "%_audio%"=="%%i" echo Audio Plugin=%%i
+	if "%%h"=="iRspPlugin" if not "%_rsp%"=="%%i" echo Rsp Plugin=%%i
+	if "%%h"=="dwMaxVideoMem" if not "%_vmem%"=="%%i" echo Max Video Mem=%%i
+	if "%%h"=="dw1964DynaMem" if not "%_1964mem%"=="%%i" echo 1964 Dyna Mem=%%i
+	if "%%h"=="dw1964PagingMem" if not "%_1964pg%"=="%%i" echo 1964 Paging Mem=%%i
+	if "%%h"=="dwPJ64DynaMem" if not "%_pj64mem%"=="%%i" echo PJ64 Dyna Mem=%%i
+	if "%%h"=="dwPJ64PagingMem" if not "%_pj64pg%"=="%%i" echo PJ64 Paging Mem=%%i
+)
+echo.)>>surreal.ini.new
 
 exit /b
