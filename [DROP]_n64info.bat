@@ -19,12 +19,28 @@ set "_pj64pg=4"
 set /a _opt_surreal=0
 set /a _opt_saves=0
 
+if exist "*.png" (
+	set "_ext=png"
+	if "%~1"=="" (
+		if exist "%_home%surreal.ini" goto rename_img
+	)
+)
+
+REM if exist "*.jpg" (
+	REM set "_ext=jpg"
+	REM if "%~1"=="" (
+		REM if exist "%_home%surreal.ini" goto rename_img
+	REM )
+REM )
+:rename_img_back
+cls
 if exist "%_home%saves" (
 	set /a _opt_saves=1
 	if "%~1"=="" (
 		if exist "%_home%surreal.ini" goto add_saves
 	)
 )
+
 :add_saves_back
 
 if exist "%temp%\temp.txt" del "%temp%\temp.txt"
@@ -449,4 +465,51 @@ echo %_crc1%
 )
 echo.)>>surreal.ini.new
 
+exit /b
+
+rem // ------------------------- rename images script ---------------------------------
+
+:rename_img
+
+echo. "png images" and "surreal.ini" were found!!
+echo.
+choice /m "do you want to rename images to match surreal.ini?"
+if %errorlevel% equ 2 goto rename_img_back
+cls
+echo. 1. CRC1 ---------^> Alt Tilte
+echo. 2. Alt Title ---^> CRC1
+echo.
+choice /n /c:12 /m "Enter Option"
+if %errorlevel% equ 1 (
+	set /a _opt=1
+)else (
+	set /a _opt=2
+)
+
+md _REN_img
+rem //can be changed to "Game Name"
+for /f "tokens=1,2 delims==" %%g in ('findstr /bri /c:"Alternate Title=" /c:"\[[A-F0-9][:A-F0-9-]*\]" "surreal.ini"') do (
+	call :rename_img "%%g" "%%h"
+
+)
+title FINISHED
+pause&exit
+
+:rename_img
+
+if /i "%~1"=="Alternate Title" (
+	set "_title=%~2"
+
+)else (
+	for /f "delims=[-" %%g in ("%~1") do set "_crc1=%%g"
+	exit /b
+)
+
+if %_opt% equ 1 (
+	echo "%_title% -------> %_crc1%"
+	copy /y "%_crc1%.%_ext%" "_REN_img\%_title%.%_ext%" >nul 2>&1
+)else (
+	echo "%_crc1% ----> %_title%"
+	copy /y "%_title%.%_ext%" "_REN_img\%_crc1%.%_ext%" >nul 2>&1
+)
 exit /b
