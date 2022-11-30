@@ -5,50 +5,43 @@ set /a _option=2
 
 set "_home=%~dp0"
 
-rem //emulator defaults
-set "_emu=0"
-set "_video=2"
-set "_audio=3"
-set "_vmem=5"
-set "_rsp=2"
-set "_1964mem=8"
-set "_1964pg=4"
-set "_pj64mem=16"
-set "_pj64pg=4"
-
 set /a _opt_surreal=0
 set /a _opt_saves=0
+if exist "%_home%saves" set /a _opt_saves=1
+if exist "%_home%surreal64" set /a _opt_surreal=1
 
+rem //rename .png images using surreal.ini
 if exist "*.png" (
-	set "_ext=png"
 	if "%~1"=="" (
-		if exist "%_home%surreal.ini" goto rename_img
+		if %_opt_surreal% equ 1 goto rename_img
 	)
 )
-
-REM if exist "*.jpg" (
-	REM set "_ext=jpg"
-	REM if "%~1"=="" (
-		REM if exist "%_home%surreal.ini" goto rename_img
-	REM )
-REM )
 :rename_img_back
 cls
-if exist "%_home%saves" (
-	set /a _opt_saves=1
+
+rem // add setting to surreal.ini using .ini files from saves folder 
+if %_opt_saves% equ 1 (
 	if "%~1"=="" (
-		if exist "%_home%surreal.ini" goto add_saves
+		if %_opt_surreal% equ 1 goto add_saves
 	)
 )
-
 :add_saves_back
+cls
 
 if exist "%temp%\temp.txt" del "%temp%\temp.txt"
 if exist "%_home%output.txt" del "%_home%output.txt"
 
 rem //look for defaults in surreal.ini
-if exist "%_home%surreal64" (
-	set /a _opt_surreal=1
+if %_opt_surreal% equ 1 (
+	set "_emu=0"
+	set "_video=2"
+	set "_audio=3"
+	set "_vmem=5"
+	set "_rsp=2"
+	set "_1964mem=8"
+	set "_1964pg=4"
+	set "_pj64mem=16"
+	set "_pj64pg=4"
 	>nul 2>&1 findstr /lb "[Settings]" "%_home%surreal64\surreal.ini"&&(
 		for /f "tokens=1,2 delims==" %%g in ('findstr /lb "Default" "%_home%surreal64\surreal.ini"') do (
 			if "%%g"=="Default Emulator" set "_emu=%%h"
@@ -389,9 +382,21 @@ echo escape like this ^^! in surreal.ini
 echo.
 timeout 5
 
-setlocal enabledelayedexpansion
 if not exist "saves\" title ERROR&echo SAVES FOLDER WAS NOT FOUND&pause&exit
 if not exist "surreal.ini" title ERROR&echo surreal.ini WAS NOT FOUND&pause&exit
+
+setlocal enabledelayedexpansion
+rem //emulator defaults
+set "_emu=0"
+set "_video=2"
+set "_audio=3"
+set "_vmem=5"
+set "_rsp=2"
+set "_1964mem=8"
+set "_1964pg=4"
+set "_pj64mem=16"
+set "_pj64pg=4"
+
 
 if exist "notfound.log" del notfound.log
 if exist "surreal.ini.new" del surreal.ini.new
@@ -489,13 +494,13 @@ if %errorlevel% equ 1 (
 md _REN_img
 rem //can be changed to "Game Name"
 for /f "tokens=1,2 delims==" %%g in ('findstr /bri /c:"Alternate Title=" /c:"\[[A-F0-9][:A-F0-9-]*\]" "surreal.ini"') do (
-	call :rename_img "%%g" "%%h"
+	call :rename_img2 "%%g" "%%h"
 
 )
 title FINISHED
 pause&exit
 
-:rename_img
+:rename_img2
 
 if /i "%~1"=="Alternate Title" (
 	set "_title=%~2"
@@ -507,9 +512,9 @@ if /i "%~1"=="Alternate Title" (
 
 if %_opt% equ 1 (
 	echo "%_title% -------> %_crc1%"
-	copy /y "%_crc1%.%_ext%" "_REN_img\%_title%.%_ext%" >nul 2>&1
+	copy /y "%_crc1%.png" "_REN_img\%_title%.png" >nul 2>&1
 )else (
 	echo "%_crc1% ----> %_title%"
-	copy /y "%_title%.%_ext%" "_REN_img\%_crc1%.%_ext%" >nul 2>&1
+	copy /y "%_title%.png" "_REN_img\%_crc1%.png" >nul 2>&1
 )
 exit /b
