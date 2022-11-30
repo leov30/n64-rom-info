@@ -17,7 +17,6 @@ if exist "*.png" (
 	)
 )
 :rename_img_back
-cls
 
 rem // add setting to surreal.ini using .ini files from saves folder 
 if %_opt_saves% equ 1 (
@@ -26,7 +25,6 @@ if %_opt_saves% equ 1 (
 	)
 )
 :add_saves_back
-cls
 
 if exist "%temp%\temp.txt" del "%temp%\temp.txt"
 if exist "%_home%output.txt" del "%_home%output.txt"
@@ -375,7 +373,7 @@ rem // ------------------------------- add config script -----------------------
 echo. "Saves" folder and "surreal.ini" were found!!
 echo.
 choice /m "add config from saves folder to surreal.ini?"
-if %errorlevel% equ 2 goto add_saves_back
+if %errorlevel% equ 2 cls&goto add_saves_back
 cls
 echo exclamation marks will dissapear from titles
 echo escape like this ^^! in surreal.ini
@@ -479,7 +477,7 @@ rem // ------------------------- rename images script --------------------------
 echo. "png images" and "surreal.ini" were found!!
 echo.
 choice /m "do you want to rename images to match surreal.ini?"
-if %errorlevel% equ 2 goto rename_img_back
+if %errorlevel% equ 2 cls&goto rename_img_back
 cls
 echo. 1. CRC1 ---------^> Alt Tilte
 echo. 2. Alt Title ---^> CRC1
