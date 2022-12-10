@@ -484,13 +484,11 @@ echo. 2. Alt. Title --^> CRC1
 echo. 3. CRC1 --------^> Game Name
 echo. 4. Game Name ---^> CRC1
 echo.
-
-set "_alt=Alternate Title"
 choice /n /c:1234 /m "Enter Option: "
-if %errorlevel% equ 1 set _opt=1
-if %errorlevel% equ 2 set _opt=2
-if %errorlevel% equ 3 set _opt=1& set "_alt=Game Name"
-if %errorlevel% equ 4 set _opt=2& set "_alt=Game Name"
+if %errorlevel% equ 1 set _opt=1&set "_alt=Alternate Title"
+if %errorlevel% equ 2 set _opt=2&set "_alt=Alternate Title"
+if %errorlevel% equ 3 set _opt=1&set "_alt=Game Name"
+if %errorlevel% equ 4 set _opt=2&set "_alt=Game Name"
 
 md _REN_img
 rem //can be changed to "Game Name"
@@ -512,11 +510,15 @@ if /i "%~1"=="%_alt%" (
 )
 
 if %_opt% equ 1 (
-	echo "%_title% -------> %_crc1%"
+	echo "%_crc1% --------^> %_title%"
 	copy /y "%_crc1%.png" "_REN_img\%_title%.png" >nul 2>&1
+	copy /y "%_crc1%.txt" "_REN_img\%_title%.txt" >nul 2>&1
+	copy /y "%_crc1%.jpg" "_REN_img\%_title%.png" >nul 2>&1
 )else (
-	echo "%_crc1% ----> %_title%"
+	echo "%_title% -------^> %_crc1%"
 	copy /y "%_title%.png" "_REN_img\%_crc1%.png" >nul 2>&1
+	copy /y "%_title%.txt" "_REN_img\%_crc1%.txt" >nul 2>&1
+	copy /y "%_title%.jpg" "_REN_img\%_crc1%.png" >nul 2>&1
 )
 exit /b
 
