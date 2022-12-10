@@ -472,8 +472,8 @@ exit /b
 rem // ------------------------- rename images script ---------------------------------
 
 :rename_img
-
-if not exist "*.png" title ERROR&echo NO PNG IMAGES FOUND&pause&exit
+cd /d "%_home%"
+REM if not exist "*.png" title ERROR&echo NO PNG IMAGES FOUND&pause&exit
 
 cls
 echo. Rename png images Options
@@ -524,6 +524,8 @@ exit /b
 
 rem // ---------------------------------- rename zip script ---------------------------------------------- 
 :rename_zip
+
+cd /d "%_home%"
 
 cls
 call :error_check
@@ -586,12 +588,12 @@ if "%_alt%"=="header" (
 )
 
 set "_line="
-for /f "delims=:" %%g in ('findstr /linb /c:"[%_crc1%-%_crc2%" surreal.ini') do set /a _line=%%g
+for /f "delims=:" %%g in ('findstr /linb /c:"[%_crc1%-%_crc2%" "%_surreal_ini%"') do set /a _line=%%g
 if "%_line%"=="" (
 	echo %_crc1% "%_rom%" NOT FOUND&exit /b
 )
 
-for /f "skip=%_line% tokens=1,2 delims==" %%g in (surreal.ini) do (
+for /f "usebackq skip=%_line% tokens=1,2 delims==" %%g in ("%_surreal_ini%") do (
 	if /i "%%g"=="%_alt%" (
 		set "_game=%%h"
 		goto exit_loop2
