@@ -18,6 +18,8 @@ drag and drop .zip, unzipped, a folder or just run the script and will extract r
 * surreal64 updater mode
 make a folder called "surreal64" and will add the rom info to the emulator configuration files, or will build new ones
 
+![Capture](https://user-images.githubusercontent.com/28023649/204120142-0f0078a2-6e5a-4327-a810-024406cabe86.JPG)
+
 * surreal64.ini mode
 drag and drop "surreal.ini" to the script and a new menu will appear
 - rename .png to surreal.ini alt. name, game name, CRC1
@@ -30,4 +32,4 @@ make folder called "patch_ocarina" and "patch_mask" and the script will rename t
 
 
 
-![Capture](https://user-images.githubusercontent.com/28023649/204120142-0f0078a2-6e5a-4327-a810-024406cabe86.JPG)
+
