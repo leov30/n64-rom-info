@@ -22,12 +22,14 @@ if /i not "%~nx1"=="surreal.ini" goto skip_menu
 	echo. 2. Add Configuration to surreal.ini from "Saves" folder
 	echo. 3. Create "Saves" folder from surreal.ini ^(only 6.0b EWJ format^)
 	echo. 4. Rename all ROMs using surreal.ini
+	echo. 5. Make synopsis files
 	echo.
-	choice /c:1234 /n /m "Enter Option Number: "
+	choice /c:12345 /n /m "Enter Option Number: "
 	if %errorlevel% equ 1 goto rename_img
 	if %errorlevel% equ 2 goto add_saves
 	if %errorlevel% equ 3 goto make_saves
 	if %errorlevel% equ 4 goto rename_zip
+	if %errorlevel% equ 5 goto make_synop
 	
 :skip_menu
 
@@ -443,7 +445,7 @@ rem //look for defaults
 		if "%%g"=="Default PJ64 Paging Mem" set "_pj64pg=%%h"
 	)
 )
-
+rem //can read surreal.ini line by line ***
 rem //get line number, and full surreal id from surreal.ini
 for /f "tokens=1-3 delims=[:]" %%g in ('findstr /nir /c:"\[[A-F0-9][A-F0-9:-]*\]" "%_surreal_ini%"') do (
 	call :search_crc1 "%%g" "%%h:%%i"
@@ -470,7 +472,7 @@ for /f "usebackq skip=%_line% tokens=1,2 delims==" %%g in ("%_surreal_ini%") do 
 )
 :exit_surreal_file
 
-rem //add empty entry if game not found, and log it
+rem //if theres no config file, log and exit loop
 if /i not exist "%_home%saves\%_crc1%\%_crc1%.ini" (
 	echo %_crc1% Not FOUND
 	(echo %_crc1%)>>notfound.log
@@ -514,7 +516,7 @@ if %errorlevel% equ 2 set _opt=2&set "_alt=Alternate Title"
 if %errorlevel% equ 3 set _opt=1&set "_alt=Game Name"
 if %errorlevel% equ 4 set _opt=2&set "_alt=Game Name"
 
-md _REN_img
+REM md _REN_img
 rem //can be changed to "Game Name"
 for /f "tokens=1,2 delims==" %%g in ('findstr /bri /c:"%_alt%=" /c:"\[[A-F0-9][:A-F0-9-]*\]" "%_surreal_ini%"') do (
 	call :rename_img2 "%%g" "%%h"
@@ -534,15 +536,23 @@ if /i "%~1"=="%_alt%" (
 )
 
 if %_opt% equ 1 (
-	echo "%_crc1% --------^> %_title%"
-	copy /y "%_crc1%.png" "_REN_img\%_title%.png" >nul 2>&1
-	copy /y "%_crc1%.txt" "_REN_img\%_title%.txt" >nul 2>&1
-	copy /y "%_crc1%.jpg" "_REN_img\%_title%.png" >nul 2>&1
+	echo "%_crc1% --------> %_title%"
+	REM copy /y "%_crc1%.png" "_REN_img\%_title%.png" >nul 2>&1
+	REM copy /y "%_crc1%.txt" "_REN_img\%_title%.txt" >nul 2>&1
+	REM copy /y "%_crc1%.jpg" "_REN_img\%_title%.jpg" >nul 2>&1
+	
+	ren "%_crc1%.png" "%_title%.png" >nul 2>&1
+	ren "%_crc1%.txt" "%_title%.txt" >nul 2>&1
+	ren "%_crc1%.jpg" "%_title%.jpg" >nul 2>&1
 )else (
-	echo "%_title% -------^> %_crc1%"
-	copy /y "%_title%.png" "_REN_img\%_crc1%.png" >nul 2>&1
-	copy /y "%_title%.txt" "_REN_img\%_crc1%.txt" >nul 2>&1
-	copy /y "%_title%.jpg" "_REN_img\%_crc1%.png" >nul 2>&1
+	echo "%_title% -------> %_crc1%"
+	REM copy /y "%_title%.png" "_REN_img\%_crc1%.png" >nul 2>&1
+	REM copy /y "%_title%.txt" "_REN_img\%_crc1%.txt" >nul 2>&1
+	REM copy /y "%_title%.jpg" "_REN_img\%_crc1%.jpg" >nul 2>&1
+	
+	ren "%_title%.png" "%_crc1%.png" >nul 2>&1
+	ren "%_title%.txt" "%_crc1%.txt" >nul 2>&1
+	ren "%_title%.jpg" "%_crc1%.jpg" >nul 2>&1
 )
 exit /b
 
@@ -676,6 +686,36 @@ for %%g in (*.z64 *.zip) do (
 )
 
 cd ..
+exit /b
+
+rem // ----------------------------------------- make synopsis script ------------------------------------------------------
+:make_synop
+
+md synopsis
+for /f "tokens=1,2 delims==" %%g in ('findstr /bir /c:"\[[A-F0-9][A-F0-9:-]*\]" /c:"Game Name=" /c:"Alternate Title=" "%_surreal_ini%"') do (
+	call :get_lines "%%g" "%%h"
+)
+
+pause&exit
+
+:get_lines
+rem //will catch no info after equal sign, however, game name and alt title will always have info
+if "%~2"=="" set "_crc1=%~1"&exit /b
+if /i "%~1"=="Game Name" set "_game=%~2"&exit /b
+if /i "%~1"=="Alternate Title" set "_alt=%~2"
+set "_crc1=%_crc1:~1,8%"
+
+(for %%g in ("%_game%") do echo Filename: %%~g.zip
+for %%g in ("%_alt%") do echo Name: %%~g
+echo Rating: None
+echo Release Year: 
+echo Developer: Indie
+echo Publisher: Hack
+echo Genre: 
+echo Players: 1
+echo _________________________)>"synopsis\%_crc1%.txt"
+
+set "_crc1="&set "_game="&set "_alt="
 exit /b
 
 
