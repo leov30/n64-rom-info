@@ -72,16 +72,26 @@ if not "%~1"=="" (
 
 :skip_addmore
 call :error_check
-
 call :check_files
 
 rem //look for a datafile, includes full path
-set "_dat="
+setlocal enabledelayedexpansion
+set /a _index=0
 for %%g in ("%_home%*.dat") do (
-	set "_dat=%%~ng"
+	set "_dat[!_index!]=%%~ng"
+	set /a _index+=1
 )
 
-if not exist "%_home%output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version",CRC,Size,Project64_id,Daedalus_id,"%_dat%")>"%_home%output.csv"
+REM for /l %%g in (0,1,%_index%) do (
+	REM set _datrom="%%_datrom[%%g]%%",!_datrom!
+	REM set _dat="^!_dat[%%g]^!",!_dat!
+REM )
+
+
+setlocal disabledelayedexpansion
+
+
+if not exist "%_home%output.csv" (echo "Zip name","ROM name","Header tilte","Region","Media","Version","CRC","Size","Duplicate_CRC1","Project64_id","Daedalus_id","%_dat[0]%")>"%_home%output.csv"
 
 for /f "usebackq delims=" %%g in ("%temp%\temp.txt") do (
 	call :get_n64 "%%g" "%%~xg"
@@ -131,6 +141,8 @@ if "%~2"==".zip" del "%_rom%"
 
 set "_media=%_title2:~-5,1%"
 set "_title=%_title%%_title2:~0,-12%"
+rem //remove doble quotes form title becuse n64dd roms will crash script
+set "_title=%_title:"='%"
 set "_version=%_code:~2,2%"
 set "_code=%_code:~0,2%"
 
@@ -190,13 +202,21 @@ set "_region=Unknown"
 :skip_region
 
 rem //get title from datafile
-set "_datrom="
-if not "%_dat%"=="" (
-	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat%.dat"') do set "_datrom=%%g"
+set "_datrom[0]="
+if not "%_dat[0]%"=="" (
+	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat[0]%.dat"') do set "_datrom[0]=%%g"
 )
 
+set "_datrom[1]="
+if not "%_dat[1]%"=="" (
+	for /f tokens^=2^ delims^=^" %%g in ('findstr /il /c:"crc=\"%_crc%\"" "%_home%%_dat[1]%.dat"') do set "_datrom[1]=%%g"
+)
+
+
+
 echo ----------------------------------------------------
-echo. Datafile       : "%_datrom%"
+if defined _dat[0] echo. Datafile       : "%_datrom[0]%"
+if defined _dat[1] echo. Datafile 2     : "%_datrom[1]%"
 echo. Zip File       : "%_file%"
 echo. File Name      : "%_rom%"
 echo. ROM Tilte      : "%_title%"
@@ -210,7 +230,8 @@ echo. RiceVideo id   : %_rice%
 echo.
 
 (echo ----------------------------------------------------
-echo Datafile       : "%_datrom%"
+if defined _dat[0] echo Datafile       : "%_datrom[0]%"
+if defined _dat[1] echo Datafile 2     : "%_datrom[1]%"
 echo Zip File       : "%_file%"
 echo File Name      : "%_rom%"
 echo ROM Tilte      : "%_title%"
@@ -224,7 +245,10 @@ echo RiceVideo id   : %_rice%
 echo.) >>"%_home%output.txt"
 
 rem // only add entry if crc dosent exist
->nul findstr /l /c:"%_crc%" "%_home%output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%",%_crc%,%_size%,%_surreal%,%_rice%,"%_datrom%")>>"%_home%output.csv"
+rem //look for dup crc1
+set "_dup1="
+>nul findstr /l /c:"%_crc1%" "%_home%output.csv"&&set _dup1=TRUE
+>nul findstr /l /c:"%_crc%" "%_home%output.csv"||(echo "%_file%","%_rom%","%_title%","%_region%","%_media%","%_version%","%_crc%","%_size%","%_dup1%","%_surreal%","%_rice%","%_datrom[0]%")>>"%_home%output.csv"
 
 set /a "_count_lines+=1"
 set /a "_percent=(%_count_lines%*100)/%_total_lines%
@@ -243,7 +267,7 @@ rem // -----------------------------  update surreal64 configuration files -----
 rem // if file dosent exist will make a new one, if surreal64 folder exist
 
 if %_option% equ 1 (
-	if not "%_datrom%"=="" set "_rom=%_datrom%"
+	if not "%_datrom[0]%"=="" set "_rom=%_datrom[0]%"
 )
 if %_option% equ 2 (
 	if not "%_file%"=="" set "_rom=%_file%"
