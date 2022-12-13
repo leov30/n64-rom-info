@@ -138,6 +138,8 @@ for /f "tokens=2,3" %%g in ('^(%_xxd% -u -g 4 -s 0x10 -l 16 "%_rom%"^)') do (
 	set "_crc2=%%h"
 )
 
+if "%_title%"=="" set _title=NO_TITLE
+
 rem //delete extracted 7zip file
 if "%~2"==".zip" del "%_rom%"
 
@@ -275,9 +277,24 @@ if %_option% equ 2 (
 	if not "%_file%"=="" set "_rom=%_file%"
 )
 
-rem //set configuration by internal name matching
-REM if not "%_title%"=="%_title:OCARINA=%" echo found Ocarina of time!!!
-REM if not "%_title%"=="%_title:MASK=%" echo found Majora's mask!!!
+rem //pre-configuration for ocarina & mask hacks
+REM if "%_file%"=="" (set "_comp=%_rom%")else (set "_comp=%_file%")
+
+REM set _rdram=1&set _rdram2=4
+REM set _save=5&set _eeprom=2&set "_save2=First Save Type"
+REM set _cf=2
+
+REM if /i not "%_comp%"=="%_comp:LoZ OoT=%" (
+	REM set _rdram=2&set _rdram2=8
+	REM set _save=3&set _eeprom=1&set _save2=Sram
+	
+REM )
+REM if /i not "%_comp%"=="%_comp:LoZ MM=%" (
+	REM set _rdram=2&set _rdram2=8
+	REM set _save=4&set _eeprom=1&set _save2=FlashRam
+	REM set _cf=3
+REM )
+
 
 >nul 2>&1 findstr /bli /c:"[%_surreal%]" "%_home%surreal64\Project64.rdb"||(
 echo.&echo [%_surreal%]
@@ -672,8 +689,7 @@ for %%g in (*.z64 *.zip) do (
 				echo %_patch[1]%|xxd -r - ".\patched\%%i"
 				echo %_patch[2]%|xxd -r - ".\patched\%%i"
 				echo. "%%g\%%i" ...............PATCHED!!
-				1>nul %_7zip% a -sdel -spd -- ".\patched\%%g" ".\patched\%%i"
-				
+				1>nul %_7zip% a -sdel -spd -- ".\patched\%%g" ".\patched\%%i"	
 			)
 		)
 	)else (
