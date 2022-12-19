@@ -533,6 +533,7 @@ if %errorlevel% equ 2 set _opt=2&set "_alt=Alternate Title"
 if %errorlevel% equ 3 set _opt=1&set "_alt=Game Name"
 if %errorlevel% equ 4 set _opt=2&set "_alt=Game Name"
 
+del notfound_img.csv
 REM md _REN_img
 rem //can be changed to "Game Name"
 for /f "tokens=1,2 delims==" %%g in ('findstr /bri /c:"%_alt%=" /c:"\[[A-F0-9][:A-F0-9-]*\]" "%_surreal_ini%"') do (
@@ -558,18 +559,18 @@ if %_opt% equ 1 (
 	REM copy /y "%_crc1%.txt" "_REN_img\%_title%.txt" >nul 2>&1
 	REM copy /y "%_crc1%.jpg" "_REN_img\%_title%.jpg" >nul 2>&1
 	
-	ren "%_crc1%.png" "%_title%.png" >nul 2>&1
-	ren "%_crc1%.txt" "%_title%.txt" >nul 2>&1
-	ren "%_crc1%.jpg" "%_title%.jpg" >nul 2>&1
+	REM ren "%_crc1%.png" "%_title%.png"
+	REM ren "%_crc1%.txt" "%_title%.txt"
+	ren "%_crc1%.png" "%_title%.png" ||(echo "%_crc1%","%_title%")>>notfound_img.csv
 )else (
 	echo "%_title% -------> %_crc1%"
 	REM copy /y "%_title%.png" "_REN_img\%_crc1%.png" >nul 2>&1
 	REM copy /y "%_title%.txt" "_REN_img\%_crc1%.txt" >nul 2>&1
 	REM copy /y "%_title%.jpg" "_REN_img\%_crc1%.jpg" >nul 2>&1
 	
-	ren "%_title%.png" "%_crc1%.png" >nul 2>&1
-	ren "%_title%.txt" "%_crc1%.txt" >nul 2>&1
-	ren "%_title%.jpg" "%_crc1%.jpg" >nul 2>&1
+	ren "%_title%.png" "%_crc1%.png" ||(echo "%_crc1%","%_title%")>>notfound_img.csv
+	REM ren "%_title%.txt" "%_crc1%.txt" >nul 2>&1
+	REM ren "%_title%.jpg" "%_crc1%.jpg" >nul 2>&1
 )
 exit /b
 
