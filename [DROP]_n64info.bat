@@ -707,6 +707,15 @@ exit /b
 
 rem // ----------------------------------------- make synopsis script ------------------------------------------------------
 :make_synop
+cls
+echo. Synopsis FileName Options
+echo. -------------------------
+echo. 1. Use CRC1
+echo. 2. Use Game Name
+echo.
+set _opt=crc1
+choice /n /c:12 /m "Enter Option: "
+if %errorlevel% equ 2 set _opt=game
 
 md synopsis
 for /f "tokens=1,2 delims==" %%g in ('findstr /bir /c:"\[[A-F0-9][A-F0-9:-]*\]" /c:"Game Name=" /c:"Alternate Title=" "%_surreal_ini%"') do (
@@ -722,6 +731,12 @@ if /i "%~1"=="Game Name" set "_game=%~2"&exit /b
 if /i "%~1"=="Alternate Title" set "_alt=%~2"
 set "_crc1=%_crc1:~1,8%"
 
+if "%_opt%"=="game" (
+	set "_file=%_game%"
+)else (
+	set "_file=%_crc1%"
+)
+
 (for %%g in ("%_game%") do echo Filename: %%~g.zip
 for %%g in ("%_alt%") do echo Name: %%~g
 echo Rating: None
@@ -730,7 +745,7 @@ echo Developer: Indie
 echo Publisher: Hack
 echo Genre: 
 echo Players: 1
-echo _________________________)>"synopsis\%_crc1%.txt"
+echo _________________________)>"synopsis\%_file%.txt"
 
 set "_crc1="&set "_game="&set "_alt="
 exit /b
