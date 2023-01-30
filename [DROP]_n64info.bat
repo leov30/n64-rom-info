@@ -4,8 +4,36 @@ rem //0=use z64 rom name,1=use datafile title,2=use zip file name
 set /a _option=0
 
 set "_home=%~dp0"
-set /a _opt_surreal=0
-if exist "%_home%surreal64\" set /a _opt_surreal=1
+set _opt_surreal=0&set _opt_xbmc=0
+if exist "%_home%surreal64\" set _opt_surreal=1
+if exist "%_home%xbmc_emustation\" set _opt_xbmc=1
+
+if %_opt_xbmc% equ 1 (
+	if not exist "%_home%xbmc_emustation\surreal.ini" (
+		(echo [Settings]
+		echo Rom Path=F:\XBMC-Emustation\Roms\n64
+		echo Media Path=D:\Media\
+		echo Skin Path=D:\Skins\
+		echo Save Path=D:\Saves\
+		echo Screenshot Path=D:\Screenshots\
+		echo Default 1964 Dyna Mem=8
+		echo Default 1964 Paging Mem=4
+		echo Default PJ64 Dyna Mem=14
+		echo Default PJ64 Paging Mem=4
+		echo Default Max Video Mem=4
+		echo Default Video Plugin=2
+		echo Default Audio Plugin=3
+		echo.
+		echo [DCBC50D1-09FD1AA3-C:45]
+		echo Game Name=007 GoldenEye ^(UltraHLE^)720pNo
+		echo Alternate Title=007 GoldenEye
+		echo Comments=Sensitivity:50%
+		echo.)>"%_home%xbmc_emustation\surreal.ini"
+	
+	)
+
+)
+
 
 if "%~1"=="" (
 	if exist "patch_ocarina" goto patch_zelda
@@ -258,7 +286,25 @@ set /a "_count_lines+=1"
 set /a "_percent=(%_count_lines%*100)/%_total_lines%
 title N64 info: %_count_lines% / %_total_lines% ^( %_percent% %% ^)
 
-rem //clear variables?
+
+
+if %_opt_xbmc% equ 1 (
+	(echo [%_surreal%]
+	for %%g in ("%_file%") do echo FileName=F:\emustation\roms\n64\%%~g
+	echo BoxArtFilename=Cbagys3DArt\%_crc1%.png
+	echo Comments=
+	echo RomSize=%_size%
+	echo.&echo.)>>"%_home%xbmc_emustation\RomlistCache.dat"
+	
+	(echo [%_surreal%]
+	for %%g in ("%_file%") do echo Game Name=%%~ng
+	for %%g in ("%_rom%") do echo Alternate Title=%%~ng
+	echo Comments=
+	echo.)>>"%_home%xbmc_emustation\surreal.ini"
+
+)
+
+rem //clear variables? check if surreal64 folder exist
 if %_opt_surreal% equ 0 (
 	set "_crc="
 	set "_crc1="
